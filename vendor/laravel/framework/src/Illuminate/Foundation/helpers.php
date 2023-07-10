@@ -109,7 +109,7 @@ if (! function_exists('app')) {
      *
      * @param  string|null  $abstract
      * @param  array  $parameters
-     * @return mixed|\Illuminate\Contracts\Foundation\Application
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Foundation\Application|mixed
      */
     function app($abstract = null, array $parameters = [])
     {
@@ -226,15 +226,13 @@ if (! function_exists('cache')) {
      *
      * If an array is passed, we'll assume you want to put to the cache.
      *
-     * @param  dynamic  key|key,default|data,expiration|null
+     * @param  mixed  ...$arguments  key|key,default|data,expiration|null
      * @return mixed|\Illuminate\Cache\CacheManager
      *
      * @throws \InvalidArgumentException
      */
-    function cache()
+    function cache(...$arguments)
     {
-        $arguments = func_get_args();
-
         if (empty($arguments)) {
             return app('cache');
         }
@@ -612,7 +610,7 @@ if (! function_exists('precognitive')) {
         });
 
         if (request()->isPrecognitive()) {
-            abort(204);
+            abort(204, headers: ['Precognition-Success' => 'true']);
         }
 
         return $payload;
@@ -800,7 +798,7 @@ if (! function_exists('route')) {
     /**
      * Generate the URL to a named route.
      *
-     * @param  array|string  $name
+     * @param  string  $name
      * @param  mixed  $parameters
      * @param  bool  $absolute
      * @return string

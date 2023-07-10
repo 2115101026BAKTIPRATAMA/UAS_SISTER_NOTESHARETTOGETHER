@@ -364,7 +364,7 @@ class Builder
     /**
      * Get all of the table names for the database.
      *
-     * @return void
+     * @return array
      *
      * @throws \LogicException
      */
@@ -421,11 +421,11 @@ class Builder
     {
         $this->disableForeignKeyConstraints();
 
-        $result = $callback();
-
-        $this->enableForeignKeyConstraints();
-
-        return $result;
+        try {
+            return $callback();
+        } finally {
+            $this->enableForeignKeyConstraints();
+        }
     }
 
     /**

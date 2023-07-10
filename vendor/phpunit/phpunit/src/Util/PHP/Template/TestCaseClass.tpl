@@ -33,7 +33,7 @@ if ($composerAutoload) {
 
 function __phpunit_run_isolated_test()
 {
-    $dispatcher = Facade::initForIsolation(
+    $dispatcher = Facade::instance()->initForIsolation(
         PHPUnit\Event\Telemetry\HRTime::fromSecondsAndNanoseconds(
             {offsetSeconds},
             {offsetNanoseconds}
@@ -43,13 +43,14 @@ function __phpunit_run_isolated_test()
     require_once '{filename}';
 
     if ({collectCodeCoverageInformation}) {
-        CodeCoverage::instance()->init(ConfigurationRegistry::get(), CodeCoverageFilterRegistry::instance());
+        CodeCoverage::instance()->init(ConfigurationRegistry::get(), CodeCoverageFilterRegistry::instance(), true);
+        CodeCoverage::instance()->ignoreLines({linesToBeIgnored});
     }
 
     $test = new {className}('{name}');
     $test->setData('{dataName}', unserialize('{data}'));
     $test->setDependencyInput(unserialize('{dependencyInput}'));
-    $test->setInIsolation(TRUE);
+    $test->setInIsolation(true);
 
     ob_end_clean();
 
@@ -79,7 +80,7 @@ function __phpunit_run_isolated_test()
     print serialize(
         [
             'testResult'    => $test->result(),
-            'codeCoverage'  => {collectCodeCoverageInformation} ? CodeCoverage::instance() : null,
+            'codeCoverage'  => {collectCodeCoverageInformation} ? CodeCoverage::instance()->codeCoverage() : null,
             'numAssertions' => $test->numberOfAssertionsPerformed(),
             'output'        => $output,
             'events'        => $dispatcher->flush(),
@@ -101,11 +102,11 @@ set_error_handler('__phpunit_error_handler');
 
 restore_error_handler();
 
+ConfigurationRegistry::loadFrom('{serializedConfiguration}');
+(new PhpHandler)->handle(ConfigurationRegistry::get()->php());
+
 if ('{bootstrap}' !== '') {
     require_once '{bootstrap}';
 }
-
-ConfigurationRegistry::loadFrom('{serializedConfiguration}');
-(new PhpHandler)->handle(ConfigurationRegistry::get()->php());
 
 __phpunit_run_isolated_test();

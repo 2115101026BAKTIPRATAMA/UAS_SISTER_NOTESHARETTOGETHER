@@ -12,7 +12,8 @@ use Traversable;
 
 /**
  * @template TKey of array-key
- * @template TValue
+ *
+ * @template-covariant TValue
  *
  * @implements \ArrayAccess<TKey, TValue>
  * @implements \Illuminate\Support\Enumerable<TKey, TValue>
@@ -356,7 +357,7 @@ class Collection implements ArrayAccess, CanBeEscapedWhenCastToString, Enumerabl
     /**
      * Get all items except for those with the specified keys.
      *
-     * @param  \Illuminate\Support\Enumerable<array-key, TKey>|array<array-key, TKey>  $keys
+     * @param  \Illuminate\Support\Enumerable<array-key, TKey>|array<array-key, TKey>|string  $keys
      * @return static
      */
     public function except($keys)
@@ -373,7 +374,7 @@ class Collection implements ArrayAccess, CanBeEscapedWhenCastToString, Enumerabl
     /**
      * Run a filter over each of the items.
      *
-     * @param (callable(TValue, TKey): bool)|null  $callback
+     * @param  (callable(TValue, TKey): bool)|null  $callback
      * @return static
      */
     public function filter(callable $callback = null)
@@ -456,9 +457,11 @@ class Collection implements ArrayAccess, CanBeEscapedWhenCastToString, Enumerabl
     /**
      * Get an item from the collection by key or add it to collection if it does not exist.
      *
+     * @template TGetOrPutValue
+     *
      * @param  mixed  $key
-     * @param  mixed  $value
-     * @return mixed
+     * @param  TGetOrPutValue|(\Closure(): TGetOrPutValue)  $value
+     * @return TValue|TGetOrPutValue
      */
     public function getOrPut($key, $value)
     {
@@ -813,17 +816,7 @@ class Collection implements ArrayAccess, CanBeEscapedWhenCastToString, Enumerabl
      */
     public function mapWithKeys(callable $callback)
     {
-        $result = [];
-
-        foreach ($this->items as $key => $value) {
-            $assoc = $callback($value, $key);
-
-            foreach ($assoc as $mapKey => $mapValue) {
-                $result[$mapKey] = $mapValue;
-            }
-        }
-
-        return new static($result);
+        return new static(Arr::mapWithKeys($this->items, $callback));
     }
 
     /**
@@ -1565,6 +1558,16 @@ class Collection implements ArrayAccess, CanBeEscapedWhenCastToString, Enumerabl
         $this->items = $this->map($callback)->all();
 
         return $this;
+    }
+
+    /**
+     * Flatten a multi-dimensional associative array with dots.
+     *
+     * @return static
+     */
+    public function dot()
+    {
+        return new static(Arr::dot($this->all()));
     }
 
     /**

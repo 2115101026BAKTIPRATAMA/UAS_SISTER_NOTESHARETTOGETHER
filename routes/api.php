@@ -27,7 +27,8 @@ Route::get('/posts2/{id}',[Postcontroller::class, 'show2']);
 Route::post('/login',[AuthenticationController::class, 'login']);
 Route::post('/register',[AuthenticationController::class, 'register']);
 Route::post('/password/forgot',[AuthenticationController::class, 'forgotPassword']);
-Route::post('/password/reset',[AuthenticationController::class, 'resetPassword']);
+Route::post('/password/reset',[AuthenticationController::class, 'resetPassword'])
+->name('password.reset');
 
 /*
 |--------------------------------------------------------------------------

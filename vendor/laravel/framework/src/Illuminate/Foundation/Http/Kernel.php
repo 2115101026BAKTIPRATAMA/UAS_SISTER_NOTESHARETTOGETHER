@@ -102,6 +102,7 @@ class Kernel implements KernelContract
     protected $middlewarePriority = [
         \Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests::class,
         \Illuminate\Cookie\Middleware\EncryptCookies::class,
+        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
         \Illuminate\Session\Middleware\StartSession::class,
         \Illuminate\View\Middleware\ShareErrorsFromSession::class,
         \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
@@ -212,6 +213,12 @@ class Kernel implements KernelContract
         $this->terminateMiddleware($request, $response);
 
         $this->app->terminate();
+
+        if ($this->requestStartedAt === null) {
+            return;
+        }
+
+        $this->requestStartedAt->setTimezone($this->app['config']->get('app.timezone') ?? 'UTC');
 
         foreach ($this->requestLifecycleDurationHandlers as ['threshold' => $threshold, 'handler' => $handler]) {
             $end ??= Carbon::now();

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Password;
 
 class AuthenticationController extends Controller
 {
@@ -86,7 +87,7 @@ public function forgotPassword(Request $request)
         ), function ($user) use ($request) {
             $user->forceFill([
                 'password' => bcrypt($request->password),
-                'remember_token' => Str::random(60),
+                // 'remember_token' => Str::random(60), 
             ])->save();
         });
 

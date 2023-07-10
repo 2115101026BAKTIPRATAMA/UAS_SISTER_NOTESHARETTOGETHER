@@ -5,6 +5,7 @@ namespace Illuminate\Process;
 use Closure;
 use Illuminate\Process\Exceptions\ProcessTimedOutException;
 use Illuminate\Support\Str;
+use Illuminate\Support\Traits\Conditionable;
 use LogicException;
 use RuntimeException;
 use Symfony\Component\Process\Exception\ProcessTimedOutException as SymfonyTimeoutException;
@@ -12,6 +13,8 @@ use Symfony\Component\Process\Process;
 
 class PendingProcess
 {
+    use Conditionable;
+
     /**
      * The process factory instance.
      *
@@ -53,6 +56,13 @@ class PendingProcess
      * @var array
      */
     public $environment = [];
+
+    /**
+     * The standard input data that should be piped into the command.
+     *
+     * @var string|int|float|bool|resource|\Traversable|null
+     */
+    public $input;
 
     /**
      * Indicates whether output should be disabled for the process.
@@ -171,6 +181,19 @@ class PendingProcess
     }
 
     /**
+     * Set the standard input that should be provided when invoking the process.
+     *
+     * @param  \Traversable|resource|string|int|float|bool|null  $input
+     * @return $this
+     */
+    public function input($input)
+    {
+        $this->input = $input;
+
+        return $this;
+    }
+
+    /**
      * Disable output for the process.
      *
      * @return $this
@@ -281,6 +304,10 @@ class PendingProcess
             $process->setIdleTimeout($this->idleTimeout);
         }
 
+        if ($this->input) {
+            $process->setInput($this->input);
+        }
+
         if ($this->quietly) {
             $process->disableOutput();
         }
@@ -334,17 +361,15 @@ class PendingProcess
 
         if (is_string($result) || is_array($result)) {
             return (new FakeProcessResult(output: $result))->withCommand($command);
-        } elseif ($result instanceof ProcessResult) {
-            return $result;
-        } elseif ($result instanceof FakeProcessResult) {
-            return $result->withCommand($command);
-        } elseif ($result instanceof FakeProcessDescription) {
-            return $result->toProcessResult($command);
-        } elseif ($result instanceof FakeProcessSequence) {
-            return $this->resolveSynchronousFake($command, fn () => $result());
         }
 
-        throw new LogicException('Unsupported synchronous process fake result provided.');
+        return match (true) {
+            $result instanceof ProcessResult => $result,
+            $result instanceof FakeProcessResult => $result->withCommand($command),
+            $result instanceof FakeProcessDescription => $result->toProcessResult($command),
+            $result instanceof FakeProcessSequence => $this->resolveSynchronousFake($command, fn () => $result()),
+            default => throw new LogicException('Unsupported synchronous process fake result provided.'),
+        };
     }
 
     /**

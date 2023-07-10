@@ -11,7 +11,7 @@ use Illuminate\Support\Traits\ReflectsClosures;
 use PHPUnit\Framework\Assert as PHPUnit;
 use ReflectionFunction;
 
-class EventFake implements Dispatcher
+class EventFake implements Dispatcher, Fake
 {
     use ForwardsCalls, ReflectsClosures;
 
@@ -20,7 +20,7 @@ class EventFake implements Dispatcher
      *
      * @var \Illuminate\Contracts\Events\Dispatcher
      */
-    protected $dispatcher;
+    public $dispatcher;
 
     /**
      * The event types that should be intercepted instead of dispatched.
@@ -95,7 +95,10 @@ class EventFake implements Dispatcher
                     if (Str::contains($expectedListener, '@')) {
                         $normalizedListener = Str::parseCallback($expectedListener);
                     } else {
-                        $normalizedListener = [$expectedListener, 'handle'];
+                        $normalizedListener = [
+                            $expectedListener,
+                            method_exists($expectedListener, 'handle') ? 'handle' : '__invoke',
+                        ];
                     }
                 }
             }
@@ -374,7 +377,7 @@ class EventFake implements Dispatcher
      *
      * @param  string|object  $event
      * @param  mixed  $payload
-     * @return array|null
+     * @return mixed
      */
     public function until($event, $payload = [])
     {
